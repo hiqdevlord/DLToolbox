@@ -1,0 +1,72 @@
+#+TITLE: Back-Propagation over CNN
+#+AUTHOR: Xenuts
+
+* Notations
+- $K$: Number of classes. $k = 1 \rightarrow K$
+- $N$: Number of training examples. $n = 1 \rightarrow N$
+- $L$: Layer number. $l = 1 \rightarrow L$
+- $\mathbf{z}^{l}$: The activation of layer $l$. $\mathbf{z}^{1}$ is exactly the input, and $\mathbf{z}^{L}$ is exactly the output $\mathbf{y}$.
+- $\mathbf{y}$: Output. Shape = $K \times N$
+- $\mathbf{t}$: Target (one-hot scheme). Shape = $K \times N$
+- $f(\cdot)$: Activation function / non-linearity function
+- $W^{l}$: Weights for fully-connected and output layers and filters for conv layers.
+- $\mathbf{b}^{l}$: Bias.
+- $S_{l}$: The size of fully-connected layers $l$ or the number of feature maps of conv and pooling layers. For output layer, $K = S_{L}$
+- $[r_{l}, c_{l}]$: The shape of feature maps of conv and pooling layers.
+
+* Shapes
+** Conv and Pooling layers
+- $\mathbf{z}^{l}$: $[r_{l} \times c_{l} \times S_{l} \times N]$
+- $W^{l}$: $[r_{f} \times c_{f} \times S_{l-1} \times S_{l}]$
+- $\mathbf{b}^{l}$: $S_{l} \times 1$
+** Fully-connected and Output layers
+- $\mathbf{z}^{l}$: $[S_{l} \times N]$
+- $W^{l}$: $[S_{l-1} \times S_{l}]$
+- $\mathbf{b}^{l}$: $S_{l} \times 1$
+
+* Output Layer $L$
+- Input: $\mathbf{z}^{L-1}$
+- Output: $\mathbf{y} = \mathbf{z}^{L} = f(\mathbf{u}^{L}), \mathbf{u}^{L} = W^{L}\mathbf{z}^{L-1} + \mathbf{b}^{L}$
+- Target: $\mathbf{t}$ is one-hot fashion
+- Gradients using delta rule:
+  - Weights: \[ \nabla W^{L} = \frac{1}{N} \cdot \mathbf{z}^{L-1} (\delta^{L})^{\top} \] 
+  - Bias: \[ \nabla \mathbf{b}^{L} = \frac{1}{N} \cdot  \sum_{n=1}^{N} \delta^{L}_{\cdot, n} \] 
+
+** Squared-Error Loss (i.e. sigmoid)
+- Method: $f(x) = \mathrm{sigmoid}(x)$
+- Squared-Error Loss: \[ J = \frac{1}{2} \sum_{n=1}^{N} \sum_{k=1}^{K} (\mathbf{t}_{k,n} - \mathbf{y}_{k,n})^{2}\]
+- Error Sensitivity (see [[http://www.cnblogs.com/tornadomeet/p/3468450.html][details]]): \[ \delta^{L} = f'(\mathbf{u}^{L}) \odot (\mathbf{y} - \mathbf{t}) \]
+
+** Cross-Entropy Loss (Softmax)
+- Method: $f(x) = \mathrm{softmax}(x)$
+- Cross-Entropy Loss: \[ J = - \sum_{n=1}^{N}\sum_{k=1}^{K} \mathbf{t} \odot \log\mathbf{y} \]
+- Error Sensitivity (see [[http://www.cnblogs.com/tornadomeet/p/3468450.html][details]]): \[ \delta^{L} = \mathbf{y} - \mathbf{t} \]
+
+* Fully-Connected Layer $l$
+A fully-connected layer can only be followed by an output layer or another fully-connected layer.
+- Input: $\mathbf{z}^{l-1}$
+- Output: $\mathbf{z}^{L} = f(\mathbf{u}^{L}), \mathbf{u}^{L} = W^{L}\mathbf{z}^{L-1} + \mathbf{b}^{L}$
+- Gradients using delta rule:
+  - Weights: \[ \nabla W^{L} = \frac{1}{N} \cdot \mathbf{z}^{L-1} (\delta^{L})^{\top} \] whose shape is $S_{L-1} \times K$
+  - Bias: \[ \nabla \mathbf{b}^{L} = \frac{1}{N} \cdot \sum_{n=1}^{N} \delta^{L}_{\cdot, n} \] whose shape is $K \times 1$
+- Error Sensitivity (see [[http://www.cnblogs.com/tornadomeet/p/3468450.html][details]]): shape is $S_{l} \times N$
+  \[ \delta^{l} = W^{l+1} \delta^{l+1} \odot f'(\mathbf{u}^{l}) \]
+- Derivative of Common Non-Linearity Function
+  - Sigmoid: \[ f(x) = \frac{1}{1 + \exp{(-x)}} \Rightarrow f'(x) = f(x)(1- f(x)) \]
+  - tanh: \[ f(x) = \tanh(x) \Rightarrow f'(x) = 1 - (f(x))^2 \]
+  - ReLU: \[ f(x) = \max(x, 0) \Rightarrow f'(x) = (f(x) > 0)\]
+
+* Convolution Layer $l$
+A convolution layer can be followed by layer `p', `c', `f', `o'.
+- Gradients ($1 \leq i \leq S_{l-1}, 1 \leq j \leq S_{l}$):
+  - Weights:
+    \[ \nabla W^{l}_{i,j} = \frac{1}{N} \cdot (\mathbf{z}_{\cdot,\cdot,i,\cdot}^{l-1} \circledast_{valid} \mathrm{rot180}(\delta_{\cdot,\cdot,j,\cdot}^{l})) \]
+  - Bias: 
+    \[ \nabla \mathbf{b}^{l}_{j} = \frac{1}{N} \cdot \sum_{n=1}^{N} \sum_{u,v} \delta^{l}_{u,v,j,n} \]
+** Followed by a Pooling Layer
+- Error Sensitivity: \[ \delta^{l} = f'(\mathbf{u}^{l}) \odot \mathrm{unpool}(\delta^{l+1}) \]
+** Followed by a Convolution Layer
+- Error Sensitivity: \[ \delta^{l} = f'(\mathbf{u}^{l}) \odot (\delta^{l+1} \circledast_{full} W^{l+1}) \]
+
+* Pooling Layer $l$
+A pooling layer can be followed by layer 'c', 'f', 'o'. The error sensitivity $\delta$'s computation is the same as above but here $f'(\mathbf{u}^{l}) = 1$.
