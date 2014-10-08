@@ -23,7 +23,7 @@ function Z = cnnConv(Z, F, b, Layer)
     
     %% Add bias and apply non-linearity
     [~, ~, num_planes, num_cases] = size(Z);
-    assert(num_planes == numel(b), 'Dimensions of Z_conv and b are mis-matched !');
+    assert(num_planes == numel(b), 'XError: Dimensions of Z_conv and b are mis-matched !');
     for i = 1 : num_cases
         for j = 1 : num_planes
             Z(:, :, j, i) = Z(:, :, j, i) + b(j); % one plane shares same bias

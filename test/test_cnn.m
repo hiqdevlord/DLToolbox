@@ -5,7 +5,9 @@ function [] = test_cnn()
 %   Author: Xiangzeng Zhou <xenuts@gmail.com>
 %   Created: 19 Sep 2014
 
-%   Time-stamp: <2014-09-25 11:52:33 by xenuts>
+%   Time-stamp: <2014-10-06 08:21:07 by xenuts>
+
+    warning('off');
 
     [cnn, W, b, Z] = cnnSetup();
     
@@ -18,7 +20,3 @@ function [] = test_cnn()
     
     RandStream.setGlobalStream(RandStream('mt19937ar','seed', 1));
     cnn = cnnTrain(cnn, W, b, Z, Y);
-    
-    %%%% TODO:
-    % 1. Sparisity
-    % 2. Dropout in 'f' layers

@@ -1,22 +1,24 @@
-function [W_g, b_g] = cnnCompGrad(cnn, L, Delta, Z)
+function [W_g, b_g] = cnnCompGrad(cnn, L, Delta, W, Z)
 %%CNNCOMPGRAD 
 %   
 %   Copyright (C) 2014 by Xiangzeng Zhou
 %   Author: Xiangzeng Zhou <xenuts@gmail.com>
 %   Created: 25 Sep 2014
 
-%   Time-stamp: <2014-09-26 00:39:48 by xenuts>
+%   Time-stamp: <2014-10-07 11:31:23 by xenuts>
     
     assert(~strcmp(cnn.Layers{L}.Type, 'o'), ...
            'Gradient of the output layer should have already been computed outside. Plz check it.');
     assert(~strcmp(cnn.Layers{L}.Type, 'i'), 'ERROR: No gradient for input layer.');
     
-    num_cases = size(Z{L}, 4);
+% % %     num_cases = size(Z{L}, 4);
     switch cnn.Layers{L}.Type
       case 'p' % Nothing. Currently no parameters for pooling layer
+          num_cases = size(Z{L}, 4);
           W_g = [];
           b_g = [];
-      case 'c'        
+      case 'c'
+        num_cases = size(Z{L}, 4);
         %% W_g
         warning('TODO: computation of W_g should be replaced by valid_each3_each4() for speed-up.');
         % !!TODO: Currently, this kind of computation is extremely time-consuming, need to optimize
@@ -27,14 +29,15 @@ function [W_g, b_g] = cnnCompGrad(cnn, L, Delta, Z)
                     %!!TODO: valid_each3_each4
                     W_g_ij = W_g_ij + conv2(Z{L-1}(:,:,i,k), rot90(Delta{L}(:, :, j, k), 2), 'valid');
                 end
-                W_g(:,:,i,j) = W_g_ij / num_cases;
+                W_g(:,:,i,j) = W_g_ij / num_cases + cnn.Opts.Lambda .* W{L}(:,:,i,j);
             end
         end
         
         %% b_g: Sum over dim 1 2 4.
         b_g = squeeze(sum(sum(sum(Delta{L}, 1), 2), 4)) ./ num_cases;
       case 'f'
-        W_g = cnnConcatZ(Z{L-1}) * Delta{L}' ./ num_cases;
+        num_cases = size(Z{L}, 2);
+        W_g = cnnConcatZ(Z{L-1}) * Delta{L}' ./ num_cases + cnn.Opts.Lambda .* W{L};
         b_g = sum(Delta{L}, 2) ./ num_cases;        
     end
 end

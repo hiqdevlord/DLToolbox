@@ -27,10 +27,10 @@ end
 
 %%
 map_size = size(maps);
-[xdim, ydim, dimprod] = size(maps);
+[rdim, cdim, dimprod] = size(maps);
 
 % The size of pooled_maps (also pooled_indices)
-pooled_size = ceil( ([xdim, ydim] - pool_size(1:2)) ./ pool_stride(1:2) ) + 1;
+pooled_size = ceil( ([rdim, cdim] - pool_size(1:2)) ./ pool_stride(1:2) ) + 1;
 
 % A pooling block(or region)
 block_elem_num = pool_size(1) * pool_size(2);
@@ -48,12 +48,13 @@ for ii = 0 : pooled_size(1)-1
     for jj = 0 : pooled_size(2)-1
        % Get current block. Here using ':' operator to concatenate all the other dims
        block_map(1:block_elem_num, :) = reshape( maps( ...
-           min(ii*pool_stride(1)+rIs, xdim), ... %% row range
-           min(jj*pool_stride(2)+cIs, ydim), :), ... %% col range
+           min(ii*pool_stride(1)+rIs, rdim), ... %% row range
+           min(jj*pool_stride(2)+cIs, cdim), :), ... %% col range
            block_elem_num, dimprod ); % Note: here using : to concatenate all the other dims
 
        % Find the maximum
-       [maxV, maxI] = max(block_map, [], 1);           
+       [maxV, maxI] = max(block_map, [], 1);
+       maxI = maxI-1; % Start at 0.
        if MAX_ABS % Find the one with maximum absolute value
            [minV, minI] = min(block_map, [], 1);
            minI = minI-1; % Start at 0.
@@ -66,7 +67,7 @@ for ii = 0 : pooled_size(1)-1
        else % Find the most positive one
            pooled_maps(ii+1, jj+1, :) = maxV;
            pooled_indice(ii+1,jj+1,:) = maxI;
-       end           
+       end
    end
 end
 

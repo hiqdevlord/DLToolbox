@@ -13,7 +13,7 @@ function norm_maps = localcnNorm(maps, varargin)
         k = varargin{1};
     end
     if(nargin < 1)
-        error('Error: localContrastNormalization() requires at least 1 parameter.');
+        error('XError: localContrastNormalization() requires at least 1 parameter.');
     end
 
     %%
@@ -38,7 +38,7 @@ function norm_maps = localcnNorm(maps, varargin)
                         zeros(xdim, kc-c0-1), Ic, zeros(xdim, c0);
                         zeros(r0, ydim+kc-1); ];
             otherwise 
-                error(['No such a padding type "' pad_type '".']);
+                error(['XError: No such a padding type "' pad_type '".']);
         end
         %% Subtractive Normalization: i.e. zero mean
         % v_{i,j} = x_{i,j} - \sum_{pq}(w_{p,q} \times x_{i+p,j+q}),

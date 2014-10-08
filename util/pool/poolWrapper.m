@@ -10,6 +10,6 @@ function [pooled_maps, pooled_indice] = poolWrapper(maps, pool_type, pool_size, 
       case 'Mean3'
         [pooled_maps, pooled_indice] = meanPool3d(); % !TODO
       otherwise
-        error(['No such pooling type: "', pooltype, '".']);
+        error(['No such pooling type: "', pool_type, '".']);
     end
 end

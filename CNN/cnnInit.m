@@ -19,7 +19,11 @@ function [cnn, W, b, Z] = cnnInit(cnn, X, W, b, Z)
             cnn.Opts.NumBatches = num_cases / cnn.Opts.BatchSize;
             
             %% Normalization            
-            X = applyNorm(cnn.Layers{L}, X); %% !!!!!! Temporary Comment Out
+            if(~strcmp(cnn.Layers{L}.NormType, 'none'))
+                X = applyNorm(cnn.Layers{L}, X);
+                assert(isreal(X), 'XError: You have some numerical problem in normlization process!')
+            end
+            
             W{L} = []; b{L} = []; Z{L} = X;
             clear X;
           case 'c' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -58,7 +62,7 @@ function [cnn, W, b, Z] = cnnInit(cnn, X, W, b, Z)
                 end
                 fan_out = cnn.Layers{L}.SizeOut;
             else
-                error('ERROR: Bad size of input_size!');
+                error('XError: Bad size of input_size!');
             end
             W{L} = initWeights(cnn, L, fan_in, fan_out);
             b{L} = zeros(cnn.Layers{L}.SizeOut, 1);

@@ -6,4 +6,4 @@
 
 %   Time-stamp: <2014-09-25 11:52:33 by xenuts>
 
-addpath(genpath(.));
+addpath(genpath('.'));

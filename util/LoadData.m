@@ -5,11 +5,11 @@ function [X, Y] = LoadData()
 %   Author: Xiangzeng Zhou <xenuts@gmail.com>
 %   Created: 19 Sep 2014
 
-%   Time-stamp: <2014-09-20 00:40:53 by xenuts>
+%   Time-stamp: <2014-10-08 10:24:37 by xenuts>
 
 %% MNIST
-    load('../datasets/mnist-train-N200.mat');
-% % %     load('../datasets/mnist-train.mat');
+    load('dataset/mnist-train-N200.mat');
+%%    load('dataset/mnist-train.mat');
    
     X = double(reshape(X, 28, 28, 1, 2000)) / 255.0;
     Y = double(c');

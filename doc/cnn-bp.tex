@@ -1,0 +1,142 @@
+% Created 2014-10-05 Sun 21:36
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fixltx2e}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{marvosym}
+\usepackage{wasysym}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\tolerance=1000
+\author{Xenuts}
+\date{\today}
+\title{Back-Propagation over CNN}
+\hypersetup{
+ pdfkeywords={},
+  pdfsubject={},
+  pdfcreator={Emacs 23.3.1 (Org mode 8.2.6)}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+
+\section{Notations}
+\label{sec-1}
+\begin{itemize}
+\item \(K\): Number of classes. \(k = 1 \rightarrow K\)
+\item \(N\): Number of training examples. \(n = 1 \rightarrow N\)
+\item \(L\): Layer number. \(l = 1 \rightarrow L\)
+\item \(\mathbf{z}^{l}\): The activation of layer \(l\). \(\mathbf{z}^{1}\) is exactly the input, and \(\mathbf{z}^{L}\) is exactly the output \(\mathbf{y}\).
+\item \(\mathbf{y}\): Output. Shape = \(K \times N\)
+\item \(\mathbf{t}\): Target (one-hot scheme). Shape = \(K \times N\)
+\item \(f(\cdot)\): Activation function / non-linearity function
+\item \(W^{l}\): Weights for fully-connected and output layers and filters for conv layers.
+\item \(\mathbf{b}^{l}\): Bias.
+\item \(S_{l}\): The size of fully-connected layers \(l\) or the number of feature maps of conv and pooling layers. For output layer, \(K = S_{L}\)
+\item \([r_{l}, c_{l}]\): The shape of feature maps of conv and pooling layers.
+\end{itemize}
+
+\section{Shapes}
+\label{sec-2}
+\subsection{Conv and Pooling layers}
+\label{sec-2-1}
+\begin{itemize}
+\item \(\mathbf{z}^{l}\): \([r_{l} \times c_{l} \times S_{l} \times N]\)
+\item \(W^{l}\): \([r_{f} \times c_{f} \times S_{l-1} \times S_{l}]\)
+\item \(\mathbf{b}^{l}\): \(S_{l} \times 1\)
+\end{itemize}
+\subsection{Fully-connected and Output layers}
+\label{sec-2-2}
+\begin{itemize}
+\item \(\mathbf{z}^{l}\): \([S_{l} \times N]\)
+\item \(W^{l}\): \([S_{l-1} \times S_{l}]\)
+\item \(\mathbf{b}^{l}\): \(S_{l} \times 1\)
+\end{itemize}
+
+\section{Output Layer \(L\)}
+\label{sec-3}
+\begin{itemize}
+\item Input: \(\mathbf{z}^{L-1}\)
+\item Output: \(\mathbf{y} = \mathbf{z}^{L} = f(\mathbf{u}^{L}), \mathbf{u}^{L} = W^{L}\mathbf{z}^{L-1} + \mathbf{b}^{L}\)
+\item Target: \(\mathbf{t}\) is one-hot fashion
+\item Gradients using delta rule:
+\begin{itemize}
+\item Weights: \[ \nabla W^{L} = \frac{1}{N} \cdot \mathbf{z}^{L-1} (\delta^{L})^{\top} + \lambda W^{L}\]
+\item Bias: \[ \nabla \mathbf{b}^{L} = \frac{1}{N} \cdot  \sum_{n=1}^{N} \delta^{L}_{\cdot, n} \]
+\end{itemize}
+\end{itemize}
+
+\subsection{Squared-Error Loss (i.e. sigmoid)}
+\label{sec-3-1}
+\begin{itemize}
+\item Method: \(f(x) = \mathrm{sigmoid}(x)\)
+\item Squared-Error Loss: \[ J = \frac{1}{2} \sum_{n=1}^{N} \sum_{k=1}^{K} (\mathbf{t}_{k,n} - \mathbf{y}_{k,n})^{2}\]
+\item Error Sensitivity (see \href{http://www.cnblogs.com/tornadomeet/p/3468450.html}{details}): \[ \delta^{L} = f'(\mathbf{u}^{L}) \odot (\mathbf{y} - \mathbf{t}) \]
+\end{itemize}
+
+\subsection{Cross-Entropy Loss (Softmax)}
+\label{sec-3-2}
+\begin{itemize}
+\item Method: \(f(x) = \mathrm{softmax}(x)\)
+\item Cross-Entropy Loss: \[ J = - \sum_{n=1}^{N}\sum_{k=1}^{K} \mathbf{t} \odot \log\mathbf{y} + \frac{\lambda}{2} \sum_{l=1}^{L} ||W^{l}||_{2}^{2}\]
+\item Error Sensitivity (see \href{http://www.cnblogs.com/tornadomeet/p/3468450.html}{details}): \[ \delta^{L} = \mathbf{y} - \mathbf{t} \]
+\end{itemize}
+
+\section{Fully-Connected Layer \(l\)}
+\label{sec-4}
+A fully-connected layer can only be followed by an output layer or another fully-connected layer.
+\begin{itemize}
+\item Input: \(\mathbf{z}^{l-1}\)
+\item Output: \(\mathbf{z}^{l} = f(\mathbf{u}^{l}), \mathbf{u}^{l} = W^{l}\mathbf{z}^{l-1} + \mathbf{b}^{l}\)
+\item Gradients using delta rule:
+\begin{itemize}
+\item Weights: \[ \nabla W^{l} = \frac{1}{N} \cdot \mathbf{z}^{l-1} (\delta^{l})^{\top}  + \lambda W^{l} \]
+\item Bias: \[ \nabla \mathbf{b}^{l} = \frac{1}{N} \cdot \sum_{n=1}^{N} \delta^{l}_{\cdot, n} \]
+\end{itemize}
+\item Error Sensitivity (see \href{http://www.cnblogs.com/tornadomeet/p/3468450.html}{details}): shape is \(S_{l} \times N\)
+  \[ \delta^{l} = W^{l+1} \delta^{l+1} \odot f'(\mathbf{u}^{l}) \]
+\item Derivative of Common Non-Linearity Function
+\begin{itemize}
+\item Sigmoid: \[ f(x) = \frac{1}{1 + \exp{(-x)}} \Rightarrow f'(x) = f(x)(1 - f(x)) \]
+\item tanh: \[ f(x) = \tanh(x) \Rightarrow f'(x) = 1 - (f(x))^2 \]
+\item ReLU: \[ f(x) = \max(x, 0) \Rightarrow f'(x) = (f(x) > 0)\]
+\end{itemize}
+\end{itemize}
+
+\section{Convolution Layer \(l\)}
+\label{sec-5}
+A convolution layer can be followed by layer `p', `c', `f', `o'.
+\begin{itemize}
+\item Gradients (\(1 \leq i \leq S_{l-1}, 1 \leq j \leq S_{l}\)):
+\begin{itemize}
+\item Weights:
+\[ \nabla W^{l}_{i,j} = \frac{1}{N} \cdot (\mathbf{z}_{\cdot,\cdot,i,\cdot}^{l-1} \circledast_{valid} \mathrm{rot180}(\delta_{\cdot,\cdot,j,\cdot}^{l})) + \lambda W^{l}_{i,j}\]
+\item Bias: 
+\[ \nabla \mathbf{b}^{l}_{j} = \frac{1}{N} \cdot \sum_{n=1}^{N} \sum_{u,v} \delta^{l}_{u,v,j,n} \]
+\end{itemize}
+\end{itemize}
+\subsection{Followed by a Pooling Layer}
+\label{sec-5-1}
+\begin{itemize}
+\item Error Sensitivity: \[ \delta^{l} = f'(\mathbf{u}^{l}) \odot \mathrm{unpool}(\delta^{l+1}) \]
+\end{itemize}
+\subsection{Followed by a Convolution Layer}
+\label{sec-5-2}
+\begin{itemize}
+\item Error Sensitivity: \[ \delta^{l} = f'(\mathbf{u}^{l}) \odot (\delta^{l+1} \circledast_{full} W^{l+1}) \]
+\end{itemize}
+
+\section{Pooling Layer \(l\)}
+\label{sec-6}
+A pooling layer can be followed by layer 'c', 'f', 'o'. The error sensitivity \(\delta\)'s computation is the same as above but here \(f'(\mathbf{u}^{l}) = 1\).
+% Emacs 23.3.1 (Org mode 8.2.6)
+\end{document}

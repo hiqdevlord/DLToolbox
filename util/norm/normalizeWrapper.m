@@ -9,6 +9,6 @@ function norm_maps = normalizeWrapper(maps, norm_type, varargin)
             norm_maps = localcnNorm(maps, varargin{:});
         case 'whiten' % !TODO
         otherwise
-            error(['Normalization type "', norm_type, '" has not implemented yet.']);
+            error(['XError: Normalization type "', norm_type, '" has not implemented yet.']);
     end
 end

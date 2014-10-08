@@ -5,14 +5,13 @@ function [W, b] = cnnTrain(cnn, W, b, Z, Y)
 %   Author: Xiangzeng Zhou <xenuts@gmail.com>
 %   Created: 20 Sep 2014
 
-%   Time-stamp: <2014-09-26 08:29:22 by xenuts>
+%   Time-stamp: <2014-10-08 10:37:42 by xenuts>
 
     %% Learning Settings
     Ln.mom = 0.95;
     Ln.velocity = [];
     Ln.alpha = cnn.Opts.Alpha;
     Ln.momInc = 20;
-    warning('off');
     %% Main Loop
     opts = cnn.Opts;
     num_batches = opts.NumBatches;
@@ -25,6 +24,7 @@ function [W, b] = cnnTrain(cnn, W, b, Z, Y)
             batch_idx = 1 : opts.NumCases;
         end
         tE = tic;
+        
         for j = 1 : num_batches
             %% Updating Momentum
             iter = iter + 1;
@@ -42,23 +42,24 @@ function [W, b] = cnnTrain(cnn, W, b, Z, Y)
                 end                
             end
             
-            %% Main Pipline            
-            % Feed-Forward
-            [Z_batch, DropoutMask] = cnnFF(cnn, W, b, Z_batch);
-            %? You can copy Z_batch back to Z if need for further application.
+            %% Get Cost and Gradient via ff and bp   
+            [Cost, Grad] = cnnCost(cnn, W, b, Z_batch, Y_batch);
             
-            % Back-Propagation
-            [Cost, Grad] = cnnBP(cnn, W, b, Z_batch, Y_batch, DropoutMask);
+            %% If Check Gradient
+            if(cnn.Opts.CHECK_GRAD && i == 2) % Gradient Check
+                cnnCheckGrad(cnn, W, b, Z_batch, Y_batch, Grad);                                
+                cnn.Opts.CHECK_GRAD = 0; % Take only one time because it's too time-comsuming
+            end
             
-            % Updating Learnable Parameters
-            [W, b, Ln] = cnnLearn(cnn, W,b, Grad, Ln);
+            %% Learn Learnable Parameters
+            [W, b, Ln] = cnnLearn(cnn, W, b, Grad, Ln);
 
             tB = toc(tB);
-% % %             fprintf('Epoch %4d: Cost on Batch %4d/%-4d is %3.3f => Time: %.3f s\n', i, j, num_batches, Cost, tB);
+% % %             fprintf('    Cost on Batch %4d/%-4d is %3.3f => Time: %.3f s\n', j, num_batches, Cost, tB);
         end
         tE = toc(tE);
         
-        %% Show Prediction on Traing sets
+        %% Show Prediction on Training sets
         PREDICT = 1;
         Z0 = cnnFF(cnn, W, b, Z, PREDICT);
         probs = Z0{end};
@@ -67,6 +68,7 @@ function [W, b] = cnnTrain(cnn, W, b, Z, Y)
         
         %% Updating Learning Rate Alpha
         Ln.alpha = Ln.alpha / 1.5; % Aneal Learning Rate by factor of 2 each epoch
+        disp(Ln.alpha);
         if(Ln.alpha < cnn.Opts.MinAlpha)
             Ln.alpha = cnn.Opts.MinAlpha;
         end
